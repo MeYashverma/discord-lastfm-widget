@@ -1,22 +1,29 @@
 const axios = require("axios");
-const fs = require("fs");
 
+// ENV
 const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
 const LASTFM_USERNAME = process.env.LASTFM_USERNAME;
-
 const DISCORD_APP_ID = process.env.DISCORD_APP_ID;
 const DISCORD_USER_ID = process.env.DISCORD_USER_ID;
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 
 
-// fetch current song
+// Fetch latest song from Last.fm
 async function fetchTrack() {
     const url =
         `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USERNAME}&api_key=${LASTFM_API_KEY}&format=json&limit=1`;
 
+    console.log("Fetching Last.fm data...");
+
     const response = await axios.get(url);
 
     const track = response.data.recenttracks.track[0];
+
+    console.log("Fetched Last.fm:");
+    console.log("Track:", track.name);
+    console.log("Artist:", track.artist["#text"]);
+    console.log("Album:", track.album["#text"]);
+    console.log("Playing:", !!track["@attr"]?.nowplaying);
 
     return {
         name: track.name,
@@ -28,23 +35,7 @@ async function fetchTrack() {
 }
 
 
-// read previous song
-function getPreviousSong() {
-    try {
-        return fs.readFileSync("last_track.txt", "utf8");
-    } catch {
-        return "";
-    }
-}
-
-
-// save latest song
-function saveSong(song) {
-    fs.writeFileSync("last_track.txt", song);
-}
-
-
-// create discord payload
+// Build Discord widget payload
 function buildPayload(track) {
     return {
         data: {
@@ -82,42 +73,54 @@ function buildPayload(track) {
 }
 
 
-// send to discord
+// Send update to Discord
 async function updateDiscord(payload) {
     const url =
         `https://discord.com/api/v9/applications/${DISCORD_APP_ID}/users/${DISCORD_USER_ID}/identities/0/profile`;
 
-    await axios.patch(url, payload, {
-        headers: {
-            Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
-            "Content-Type": "application/json"
+    console.log("Sending payload to Discord...");
+    console.log(JSON.stringify(payload, null, 2));
+
+    const response = await axios.patch(
+        url,
+        payload,
+        {
+            headers: {
+                Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+                "Content-Type": "application/json",
+                "User-Agent": "DiscordBot (custom widget updater)"
+            }
         }
-    });
+    );
+
+    console.log("Discord API Status:", response.status);
+    console.log("Discord widget updated.");
 }
 
 
-// main
+// Main
 (async () => {
+    try {
+        console.log("====================================");
+        console.log("RUN TIME:", new Date().toISOString());
+        console.log("====================================");
 
-    const track = await fetchTrack();
+        const track = await fetchTrack();
 
-    const currentSong = `${track.name}-${track.artist}`;
+        const payload = buildPayload(track);
 
-    const previousSong = getPreviousSong();
+        await updateDiscord(payload);
 
-    if (currentSong === previousSong) {
-        console.log("No song change. Skipping.");
-        return;
+        console.log("Update cycle complete.");
+
+    } catch (err) {
+        console.error("ERROR:");
+
+        if (err.response) {
+            console.error("Status:", err.response.status);
+            console.error("Response:", err.response.data);
+        } else {
+            console.error(err);
+        }
     }
-
-    console.log("Song changed:", currentSong);
-
-    const payload = buildPayload(track);
-
-    await updateDiscord(payload);
-
-    saveSong(currentSong);
-
-    console.log("Discord widget updated.");
-
 })();
