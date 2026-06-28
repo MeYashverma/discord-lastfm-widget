@@ -1,5 +1,8 @@
 const axios = require("axios");
 
+// =====================
+// ENV VARIABLES
+// =====================
 const LASTFM_API_KEY = process.env.LASTFM_API_KEY;
 const LASTFM_USERNAME = process.env.LASTFM_USERNAME;
 const DISCORD_APP_ID = process.env.DISCORD_APP_ID;
@@ -7,10 +10,32 @@ const DISCORD_USER_ID = process.env.DISCORD_USER_ID;
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 
 
-// Get currently playing
+// =====================
+// FORMAT LARGE NUMBERS
+// =====================
+function formatNumber(num) {
+    num = Number(num);
+
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + "M";
+    }
+
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1) + "K";
+    }
+
+    return String(num);
+}
+
+
+// =====================
+// FETCH CURRENT TRACK
+// =====================
 async function fetchRecentTrack() {
     const url =
         `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USERNAME}&api_key=${LASTFM_API_KEY}&format=json&limit=1`;
+
+    console.log("Fetching current track...");
 
     const response = await axios.get(url);
 
@@ -19,36 +44,64 @@ async function fetchRecentTrack() {
     return {
         name: track.name,
         artist: track.artist["#text"],
-        album: track.album["#text"],
+        album: track.album["#text"] || "Unknown Album",
         playing: !!track["@attr"]?.nowplaying,
         image: track.image.at(-1)["#text"]
     };
 }
 
 
-// Get global listeners count
-async function fetchTrackInfo(trackName, artistName) {
-    const url =
-        `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${LASTFM_API_KEY}&artist=${encodeURIComponent(artistName)}&track=${encodeURIComponent(trackName)}&format=json`;
+// =====================
+// FETCH TRACK LISTENERS
+// =====================
+async function fetchTrackListeners(trackName, artistName) {
+    try {
+        const url =
+            `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${LASTFM_API_KEY}&artist=${encodeURIComponent(artistName)}&track=${encodeURIComponent(trackName)}&format=json`;
 
-    const response = await axios.get(url);
+        console.log("Fetching listeners count...");
 
-    return response.data.track.listeners;
+        const response = await axios.get(url);
+
+        const listeners = response.data.track.listeners;
+
+        return formatNumber(listeners);
+
+    } catch (error) {
+        console.log("Could not fetch listeners.");
+
+        return "N/A";
+    }
 }
 
 
-// Get your total scrobbles
-async function fetchUserInfo() {
-    const url =
-        `https://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${LASTFM_USERNAME}&api_key=${LASTFM_API_KEY}&format=json`;
+// =====================
+// FETCH USER SCROBBLES
+// =====================
+async function fetchUserScrobbles() {
+    try {
+        const url =
+            `https://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${LASTFM_USERNAME}&api_key=${LASTFM_API_KEY}&format=json`;
 
-    const response = await axios.get(url);
+        console.log("Fetching scrobble count...");
 
-    return response.data.user.playcount;
+        const response = await axios.get(url);
+
+        const playcount = response.data.user.playcount;
+
+        return formatNumber(playcount);
+
+    } catch (error) {
+        console.log("Could not fetch scrobbles.");
+
+        return "N/A";
+    }
 }
 
 
-// Build Discord payload
+// =====================
+// BUILD DISCORD PAYLOAD
+// =====================
 function buildPayload(track, listeners, scrobbles) {
     return {
         data: {
@@ -96,10 +149,14 @@ function buildPayload(track, listeners, scrobbles) {
 }
 
 
-// Push to Discord
+// =====================
+// UPDATE DISCORD WIDGET
+// =====================
 async function updateDiscord(payload) {
     const url =
         `https://discord.com/api/v9/applications/${DISCORD_APP_ID}/users/${DISCORD_USER_ID}/identities/0/profile`;
+
+    console.log("Sending update to Discord...");
 
     const response = await axios.patch(
         url,
@@ -113,43 +170,60 @@ async function updateDiscord(payload) {
         }
     );
 
-    console.log("Discord status:", response.status);
+    console.log("Discord API Status:", response.status);
 }
 
 
-// Main
+// =====================
+// MAIN EXECUTION
+// =====================
 (async () => {
     try {
-        console.log("Starting update...");
+        console.log("======================================");
+        console.log("RUN TIME:", new Date().toISOString());
+        console.log("======================================");
 
+        // Fetch all data
         const track = await fetchRecentTrack();
 
-        const listeners = await fetchTrackInfo(
-            track.name,
-            track.artist
-        );
+        const listeners =
+            await fetchTrackListeners(
+                track.name,
+                track.artist
+            );
 
-        const scrobbles = await fetchUserInfo();
+        const scrobbles =
+            await fetchUserScrobbles();
 
-        console.log("Track:", track.name);
+        // Log results
+        console.log("Current Track:", track.name);
+        console.log("Artist:", track.artist);
+        console.log("Album:", track.album);
+        console.log("Status:", track.playing ? "LIVE" : "IDLE");
         console.log("Listeners:", listeners);
         console.log("Scrobbles:", scrobbles);
 
+        // Build payload
         const payload =
-            buildPayload(track, listeners, scrobbles);
+            buildPayload(
+                track,
+                listeners,
+                scrobbles
+            );
 
+        // Update Discord
         await updateDiscord(payload);
 
-        console.log("Widget updated.");
+        console.log("Widget successfully updated.");
 
-    } catch (err) {
-        console.error("ERROR:");
+    } catch (error) {
+        console.error("======== ERROR ========");
 
-        if (err.response) {
-            console.error(err.response.status);
-            console.error(err.response.data);
+        if (error.response) {
+            console.error("Status:", error.response.status);
+            console.error("Response:", error.response.data);
         } else {
-            console.error(err);
+            console.error(error);
         }
     }
 })();
