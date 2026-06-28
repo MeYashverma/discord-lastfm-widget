@@ -11,18 +11,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install Dependencies
         run: npm install
 
-      - name: Run Script
+      - name: Run Widget Updater
         run: node update.js
         env:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
