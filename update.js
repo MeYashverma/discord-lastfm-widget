@@ -36,9 +36,9 @@ async function fetchRecentTrack() {
 
     const response = await axios.get(url);
 
-    const track = response.data.recenttracks.track[0];
+    const track =
+        response.data.recenttracks.track[0];
 
-    // safe image handling
     let imageUrl = "";
 
     if (
@@ -46,29 +46,38 @@ async function fetchRecentTrack() {
         track.image.length > 0 &&
         track.image.at(-1)["#text"]
     ) {
-        imageUrl = track.image.at(-1)["#text"];
+        imageUrl =
+            track.image.at(-1)["#text"];
     }
 
     return {
         name: track.name,
         artist: track.artist["#text"],
-        album: track.album["#text"] || "Unknown",
-        playing: !!track["@attr"]?.nowplaying,
+        album:
+            track.album["#text"] ||
+            "Unknown",
+        playing:
+            !!track["@attr"]?.nowplaying,
         image: imageUrl
     };
 }
 
 
 // =====================
-// FETCH TRACK LISTENERS
+// FETCH LISTENERS
 // =====================
-async function fetchListeners(trackName, artistName) {
+async function fetchListeners(
+    trackName,
+    artistName
+) {
 
     try {
+
         const url =
             `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${LASTFM_API_KEY}&artist=${encodeURIComponent(artistName)}&track=${encodeURIComponent(trackName)}&format=json`;
 
-        const response = await axios.get(url);
+        const response =
+            await axios.get(url);
 
         return formatNumber(
             response.data.track.listeners
@@ -81,15 +90,17 @@ async function fetchListeners(trackName, artistName) {
 
 
 // =====================
-// FETCH USER SCROBBLES
+// FETCH SCROBBLES
 // =====================
 async function fetchScrobbles() {
 
     try {
+
         const url =
             `https://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${LASTFM_USERNAME}&api_key=${LASTFM_API_KEY}&format=json`;
 
-        const response = await axios.get(url);
+        const response =
+            await axios.get(url);
 
         return formatNumber(
             response.data.user.playcount
@@ -102,9 +113,13 @@ async function fetchScrobbles() {
 
 
 // =====================
-// BUILD PAYLOAD
+// BUILD DISCORD PAYLOAD
 // =====================
-function buildPayload(track, listeners, scrobbles) {
+function buildPayload(
+    track,
+    listeners,
+    scrobbles
+) {
 
     const dynamic = [
         {
@@ -125,7 +140,10 @@ function buildPayload(track, listeners, scrobbles) {
         {
             type: 1,
             name: "status",
-            value: track.playing ? "LIVE" : "IDLE"
+            value:
+                track.playing
+                    ? "LIVE"
+                    : "IDLE"
         },
         {
             type: 1,
@@ -139,7 +157,7 @@ function buildPayload(track, listeners, scrobbles) {
         }
     ];
 
-    // only add album art if image exists
+    // add image only if exists
     if (
         track.image &&
         track.image.trim() !== ""
@@ -164,7 +182,9 @@ function buildPayload(track, listeners, scrobbles) {
 // =====================
 // UPDATE DISCORD
 // =====================
-async function updateDiscord(payload) {
+async function updateDiscord(
+    payload
+) {
 
     const url =
         `https://discord.com/api/v9/applications/${DISCORD_APP_ID}/users/${DISCORD_USER_ID}/identities/0/profile`;
@@ -184,7 +204,7 @@ async function updateDiscord(payload) {
         );
 
     console.log(
-        "Discord Status:",
+        "Discord response:",
         response.status
     );
 }
@@ -198,20 +218,11 @@ async function updateDiscord(payload) {
     try {
 
         console.log(
-            "Starting widget update..."
+            "Running widget update..."
         );
 
         const track =
             await fetchRecentTrack();
-
-        const listeners =
-            await fetchListeners(
-                track.name,
-                track.artist
-            );
-
-        const scrobbles =
-            await fetchScrobbles();
 
         console.log(
             "Track:",
@@ -222,6 +233,15 @@ async function updateDiscord(payload) {
             "Artist:",
             track.artist
         );
+
+        const listeners =
+            await fetchListeners(
+                track.name,
+                track.artist
+            );
+
+        const scrobbles =
+            await fetchScrobbles();
 
         console.log(
             "Listeners:",
@@ -251,12 +271,11 @@ async function updateDiscord(payload) {
     } catch (err) {
 
         console.error(
-            "===== ERROR ====="
+            "ERROR"
         );
 
         if (err.response) {
             console.error(
-                "Status:",
                 err.response.status
             );
 
