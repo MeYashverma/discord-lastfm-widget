@@ -337,19 +337,6 @@ Possible delay:
 
 ---
 
-## 🔮 Future Plans
-
-- Top Artist Widget  
-- Weekly Stats  
-- Listening History  
-- Genre Detection  
-- Playcount Tracking  
-- Listening Streak  
-- Carousel UI  
-- Animated Artwork  
-
----
-
 ## 🧰 Tech Stack
 
 - Node.js  
@@ -366,3 +353,5 @@ Possible delay:
 **Yash Verma**
 
 - GitHub: https://github.com/MeYashverma
+- Last.FM: http://last.fm/user/The_Berlin
+![My scrobbles](https://lastfm-recently-played.vercel.app/api?user=The_Berlin&show_user=header&compact_stats_only)
