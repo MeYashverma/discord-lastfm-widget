@@ -2,13 +2,14 @@ name: Update Discord Widget
 
 on:
   workflow_dispatch:
+  # Optional safety fallback (in case self-trigger fails)
   schedule:
-    - cron: "0 */6 * * *"   # restart every 6 hours (safety restart)
+    - cron: "0 */6 * * *"
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 360   # max GitHub limit (6 hours)
+    timeout-minutes: 360
 
     steps:
       - name: Checkout Repository
@@ -22,7 +23,7 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Run Continuous Widget Updater
+      - name: Run Continuous Loop
         run: |
           echo "Starting continuous updater loop..."
 
@@ -39,13 +40,12 @@ jobs:
             echo "Sleeping for 5 minutes..."
             sleep 300
 
-            # Check elapsed runtime (safe exit before GitHub kills job)
             NOW=$(date +%s)
             ELAPSED=$((NOW - START_TIME))
 
-            # Stop ~5 min before 6-hour limit (21000 sec ≈ 5h 50m)
+            # Stop before GitHub timeout (~5h 50m)
             if [ $ELAPSED -gt 21000 ]; then
-              echo "Approaching timeout, exiting loop safely..."
+              echo "Approaching timeout, exiting loop..."
               break
             fi
           done
@@ -55,3 +55,14 @@ jobs:
           DISCORD_APP_ID: ${{ secrets.DISCORD_APP_ID }}
           DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+
+      # ✅ SELF-TRIGGER NEXT RUN (Core Feature)
+      - name: Trigger Next Run
+        run: |
+          echo "Triggering next workflow run..."
+
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/update.yml/dispatches \
+            -d '{"ref":"main"}'
