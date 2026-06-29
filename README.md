@@ -1,212 +1,284 @@
-# 🎵 Discord Dynamic Profile Widget Framework
+🎵 Discord Dynamic Profile Widget Engine
 
-**Real-Time Last.fm Powered Discord Profile Widget using GitHub Actions**
+Real-Time Last.fm Powered Discord Widget Automation using GitHub Actions
 
-A fully automated cloud-based system that connects Last.fm listening activity with Discord’s new Dynamic Profile Widget system.
+A cloud-based automation system that connects Last.fm listening activity with Discord’s Dynamic Profile Widget system, automatically displaying live music data directly on a Discord profile.
 
-It fetches music data from Last.fm, converts it into Discord Widget JSON payloads, and updates your Discord profile automatically.
+This project fetches real-time music data from Last.fm, transforms it into Discord-compatible widget payloads, and continuously updates a Discord profile widget using scheduled GitHub Actions.
 
-- ✅ No VPS  
-- ✅ No 24/7 machine  
-- ✅ No self-hosting  
-
-> ⚡ Runs entirely on GitHub Actions
+Built after reverse engineering Discord’s experimental Widget API.
 
 ---
 
-## 🚀 Project Overview
+Overview
 
-This project creates a live Discord widget that displays:
+This project creates an automated Discord widget that displays live listening activity and music statistics.
 
-### 🎧 Live Music Data
-- Current Track  
-- Artist Name  
-- Album Name  
-- Listening Status (`LIVE / IDLE`)  
-- Album Artwork  
+The system continuously syncs Last.fm data and updates the widget without requiring any local machine, VPS, or persistent backend.
 
-### 📊 Music Statistics
-- Track Listener Count  
-- Total Personal Scrobbles  
+Features:
 
----
+Current Track
+Artist Name
+Album Name
+Listening Status
 
-## 💡 Why I Built This
+Album Artwork
 
-Discord introduced experimental **Dynamic Profile Widgets**.
+Track Listener Count
+Total Personal Scrobbles
 
-Unlike Rich Presence, these widgets allow **fully customizable dynamic content**.
+Infrastructure:
 
-### Goals:
-- Automate a Discord music widget  
-- Use Last.fm as a data source  
-- Eliminate server/VPS dependency  
-- Achieve near real-time updates  
-- Reverse engineer Discord widget API behavior  
-- Run everything using GitHub  
-
----
-
-## 🧩 Widget Structure
-
-### 🔴 Section 1 — Live Music Activity
-*Updated frequently*
-
-- 🎵 Track  
-- 🎤 Artist  
-- 💿 Album  
-- 🔴 Status  
-- 🖼 Artwork  
-
-**Example:**
-```
-TRACK   → Where Is My Mind?
-ARTIST  → Pixies
-ALBUM   → Surfer Rosa
-STATUS  → LIVE
-```
-
----
-
-### 📈 Section 2 — Listening Statistics
-*Updated less frequently*
-
-- 🎧 Track Listeners  
-- 📈 Total Scrobbles  
-
-**Example:**
-```
-LISTENERS → 428K
-SCROBBLES → 22.9K
-```
-
----
-
-## 🏗 System Architecture
-
-```
+GitHub Actions
+Node.js
+Discord Widget API
 Last.fm API
-     │
-     ├──────────────┐
-     │              │
-FAST WORKFLOW    STATS WORKFLOW
-(1 min)          (15 min)
-     │              │
-     │              │
-recenttracks    track.getInfo
-     │          user.getinfo
-     │              │
-     │              │
-Live Data      Stats Data
-     │              │
-     └──── PATCH ───┘
-             │
-   Discord Widget API
-             │
-   Discord Profile Widget
-```
+REST API Automation
+
+No background server required.
+
+No VPS
+No Railway
+No Render
+No Cloudflare Workers
+No local machine running 24/7
+
+Everything runs entirely on GitHub Actions.
 
 ---
 
-## ⚙️ Workflow Design
+What This Widget Displays
 
-### Why Split Workflows?
+The Discord widget dynamically updates these fields.
 
-Single workflow problem:
-- 3 API calls every run:
-  - `user.getrecenttracks`
-  - `track.getInfo`
-  - `user.getinfo`
+Live Music Metadata
 
-### ✅ Solution:
-- Split based on update frequency  
+Track Name
+Artist Name
+Album Name
+Status (LIVE / IDLE)
+Album Artwork
 
----
+Example:
 
-## ⚡ Fast Workflow
-
-- Runs: **every 1 minute**
-- Updates:
-  - Track
-  - Artist
-  - Album
-  - Status
-  - Artwork  
-
-**Files:**
-```
-fast-update.js
-.github/workflows/fast.yml
-```
+TRACK      → DARE
+ARTIST     → Gorillaz
+ALBUM      → Demon Days
+STATUS     → LIVE
 
 ---
 
-## 📊 Stats Workflow
+Music Statistics
 
-- Runs: **every 15 minutes**
-- Updates:
-  - Listeners
-  - Scrobbles  
+Global Track Listener Count
+Total User Scrobbles
 
-**Files:**
-```
-stats-update.js
-.github/workflows/stats.yml
-```
+Example:
+
+LISTENERS  → 28.4K
+SCROBBLES → 23.0K
 
 ---
 
-## 🌐 APIs Used
+System Architecture
 
-### 🎵 Last.fm API
+The project uses a single workflow architecture.
 
-Docs: https://www.last.fm/api
+All widget data is fetched and updated in one execution cycle.
 
-#### `user.getrecenttracks`
-```
-https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=USERNAME&api_key=KEY&format=json&limit=1
-```
+                  GitHub Actions Scheduler
+                            │
+                            │
+                     Execute update.js
+                            │
+                            │
+               ┌────────────┼────────────┐
+               │                         │
+               │                         │
 
-#### `track.getInfo`
-```
+        Last.fm API               Last.fm API
+
+ user.getrecenttracks           track.getInfo
+                                   user.getinfo
+
+               │                         │
+               └────────────┬────────────┘
+                            │
+                    Build Full Payload
+                            │
+                            │
+              Discord Widget API PATCH
+                            │
+                            │
+                Discord Profile Widget
+
+---
+
+How The System Works
+
+The workflow executes periodically using GitHub cron scheduling.
+
+Each execution performs the following sequence.
+
+1. GitHub scheduler triggers workflow
+
+2. Temporary GitHub runner starts
+
+3. Node.js environment is initialized
+
+4. update.js executes
+
+5. Fetch currently playing track from Last.fm
+
+6. Fetch track listener count
+
+7. Fetch total Last.fm scrobbles
+
+8. Build Discord JSON payload
+
+9. Send PATCH request to Discord Widget API
+
+10. Discord profile widget updates
+
+11. GitHub runner terminates
+
+---
+
+APIs Used
+
+This project integrates multiple APIs.
+
+---
+
+Last.fm API
+
+Primary data source for music metadata.
+
+Documentation:
+
+https://www.last.fm/api
+
+Endpoints used:
+
+user.getrecenttracks
+track.getInfo
+user.getinfo
+
+---
+
+user.getrecenttracks
+
+Fetches most recently played track.
+
+Used for:
+
+Track
+Artist
+Album
+Playback Status
+Album Artwork
+
+Example request:
+
+https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=USERNAME&api_key=APIKEY&format=json&limit=1
+
+---
+
+track.getInfo
+
+Fetches track metadata.
+
+Used for:
+
+Global listener count
+
+Example request:
+
 https://ws.audioscrobbler.com/2.0/?method=track.getInfo&artist=Pixies&track=Where%20Is%20My%20Mind?&api_key=KEY&format=json
-```
-
-#### `user.getinfo`
-```
-https://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=USERNAME&api_key=KEY&format=json
-```
 
 ---
 
-## 💬 Discord Widget API
+user.getinfo
 
-### Request
+Fetches Last.fm user account information.
 
-- Method: `PATCH`
-- Endpoint:
-```
+Used for:
+
+Total personal scrobbles
+
+Example request:
+
+https://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=USERNAME&api_key=KEY&format=json
+
+---
+
+Discord Widget API
+
+Discord recently introduced Dynamic Profile Widgets as part of its Social SDK architecture.
+
+This project directly updates widget values using Discord’s internal Widget API.
+
+---
+
+API Method
+
+PATCH
+
+Endpoint:
+
 https://discord.com/api/v9/applications/{APP_ID}/users/{USER_ID}/identities/0/profile
-```
 
-### Headers
-```json
+Authentication:
+
+Bot Token Authorization
+
+Headers:
+
 Authorization: Bot YOUR_BOT_TOKEN
 Content-Type: application/json
-```
 
 ---
 
-## 📦 Payload Example
+Payload Structure
 
-```json
+Discord widgets accept dynamic JSON payloads.
+
+Example payload.
+
 {
   "data": {
     "dynamic": [
-      { "type": 1, "name": "track", "value": "Closer" },
-      { "type": 1, "name": "artist", "value": "Nine Inch Nails" },
-      { "type": 1, "name": "album", "value": "The Downward Spiral" },
-      { "type": 1, "name": "status", "value": "LIVE" },
+      {
+        "type": 1,
+        "name": "track",
+        "value": "DARE"
+      },
+      {
+        "type": 1,
+        "name": "artist",
+        "value": "Gorillaz"
+      },
+      {
+        "type": 1,
+        "name": "album",
+        "value": "Demon Days"
+      },
+      {
+        "type": 1,
+        "name": "status",
+        "value": "LIVE"
+      },
+      {
+        "type": 1,
+        "name": "listeners",
+        "value": "28.4K"
+      },
+      {
+        "type": 1,
+        "name": "scrobbles",
+        "value": "23.0K"
+      },
       {
         "type": 3,
         "name": "album_art",
@@ -217,142 +289,288 @@ Content-Type: application/json
     ]
   }
 }
-```
 
 ---
 
-## 🤖 GitHub Actions
+Engineering Discovery
 
-### Fast Workflow
-```
-.github/workflows/fast.yml
-```
+During development the project originally used a multi-workflow architecture.
 
-Schedule:
-```
-* * * * *
-```
+Architecture tested:
+
+fast-update.js
+stats-update.js
+
+fast.yml
+stats.yml
+
+The idea was to separate fast-changing data from slow-changing statistics.
+
+Problem discovered:
+
+Discord Widget API does not merge partial widget updates.
+
+Example.
+
+PATCH 1 → track, artist, album
+
+PATCH 2 → listeners, scrobbles
+
+Discord behavior:
+
+Second PATCH replaces entire dynamic array
+instead of merging values.
+
+Result:
+
+Track fields disappear
+Widget shows partial data only
+
+Final architecture changed to:
+
+Single workflow
+Single updater
+Single full payload
+
+This was one of the most important discoveries while reverse engineering Discord’s widget system.
 
 ---
 
-### Stats Workflow
-```
-.github/workflows/stats.yml
-```
+GitHub Actions Automation
 
-Schedule:
-```
-*/15 * * * *
-```
+The project runs entirely using GitHub Actions.
+
+Workflow:
+
+.github/workflows/update.yml
+
+Current schedule:
+
+*/5 * * * *
+
+Execution process:
+
+GitHub Scheduler Trigger
+       ↓
+Temporary Ubuntu Runner Starts
+       ↓
+Install Dependencies
+       ↓
+Run update.js
+       ↓
+Fetch Last.fm Data
+       ↓
+Build JSON Payload
+       ↓
+PATCH Discord API
+       ↓
+Runner Terminates
+
+GitHub Actions does not run continuously.
+
+Each execution creates a temporary cloud environment.
 
 ---
 
-## 📂 Project Structure
+Project Structure
 
-```
 discord-lastfm-widget/
-├── package.json
-├── fast-update.js
-├── stats-update.js
-└── .github/
-    └── workflows/
-        ├── fast.yml
-        └── stats.yml
-```
+
+package.json
+update.js
+
+.github/
+
+   workflows/
+
+      update.yml
+
+README.md
 
 ---
 
-## 🔐 Required Secrets
+Required Secrets
+
+Add the following repository secrets.
 
 Path:
-```
-Settings → Secrets → Actions
-```
 
-```
+Repository Settings
+→ Secrets and Variables
+→ Actions
+
+Required values.
+
 LASTFM_API_KEY
 LASTFM_USERNAME
 DISCORD_APP_ID
 DISCORD_USER_ID
 DISCORD_BOT_TOKEN
-```
 
 ---
 
-## 🚀 Deployment
+Deployment
 
-```
-Clone Repo
-   ↓
-Add Secrets
-   ↓
+Clone Repository
+       ↓
+Add GitHub Secrets
+       ↓
 Push Code
-   ↓
-Actions Run
-   ↓
-Fetch Data
-   ↓
-Send Payload
-   ↓
-Widget Updates ✅
-```
+       ↓
+GitHub Actions Executes
+       ↓
+Fetch Last.fm Data
+       ↓
+Build Discord Payload
+       ↓
+PATCH Discord API
+       ↓
+Discord Widget Updates
 
 ---
 
-## 📚 References
+GitHub Actions Limitations
 
-- https://youtu.be/gYv7D83u7yQ  
-- https://chloecinders.com/blog/discord-widgets  
-- https://discord.com/developers/docs  
-- https://docs.github.com/actions  
-- https://www.last.fm/api  
+GitHub Actions scheduling is not real-time.
 
----
+GitHub does not guarantee exact cron execution.
 
-## ⚠️ Common Issues
+Observed behavior.
 
-### Widget Not Updating
-- Check logs  
-- Check secrets  
-- Verify IDs  
+1 minute schedule → often skipped
 
-### API 400 Error
-- Invalid JSON  
-- Missing fields  
-- Empty artwork  
+2 minute schedule → unstable
 
-### Workflow Not Running
-- Cron syntax  
-- Actions enabled  
+5 minute schedule → generally reliable
+
+10 minute schedule → very reliable
+
+Recommended schedule.
+
+*/5 * * * *
 
 ---
 
-## 📉 Limitations
+Development Journey
 
-GitHub Actions is not real-time.
+Multiple architectures were tested during development.
 
-Possible delay:
-- 30s  
-- 1–2 minutes  
+GitHub Actions Single Workflow
+
+GitHub Multi Workflow Architecture
+
+Cloudflare Workers + Cron
+
+Railway Worker Deployment
+
+Render Background Worker
+
+Dual GitHub Workflow Architecture
+
+Final Stable Single Workflow Architecture
+
+Problems encountered.
+
+Discord API 400 errors
+
+GitHub cron throttling
+
+Discord widget overwrite behavior
+
+Cloudflare scheduling limitations
+
+Railway free tier deployment issues
+
+Render background worker failures
+
+Discord payload validation problems
 
 ---
 
-## 🧰 Tech Stack
+Future Improvements
 
-- Node.js  
-- GitHub Actions  
-- Axios  
-- REST APIs  
-- Last.fm API  
-- Discord API  
+Planned features.
+
+Track change detection cache
+
+Skip Discord update when same song
+
+Spotify API integration
+
+Recently played detection
+
+Offline state detection
+
+Listening streak tracking
+
+Top artist statistics
+
+Multiple music provider support
 
 ---
 
-## 👤 Author
+References
 
-**Yash Verma**
+Resources used during development.
 
-- GitHub: https://github.com/MeYashverma
-- Last.FM: http://last.fm/user/The_Berlin
+Discord Widget Tutorial
 
-![My scrobbles](https://lastfm-recently-played.vercel.app/api?user=The_Berlin&show_user=header&compact_stats_only)
+https://youtu.be/gYv7D83u7yQ
+
+Discord Widgets Deep Dive
+
+https://chloecinders.com/blog/discord-widgets
+
+Discord Developer Documentation
+
+https://discord.com/developers/docs
+
+GitHub Actions Documentation
+
+https://docs.github.com/actions
+
+Last.fm API Documentation
+
+https://www.last.fm/api
+
+---
+
+Tech Stack
+
+Node.js
+
+GitHub Actions
+
+Axios
+
+REST APIs
+
+Discord Widget API
+
+Last.fm API
+
+JSON Payload Processing
+
+---
+
+Author
+
+Built by
+
+Yash Verma
+
+GitHub
+
+https://github.com/MeYashverma
+
+Last.fm
+
+http://last.fm/user/The_Berlin
+
+---
+
+Live Last.fm Stats
+
+"My scrobbles" (https://lastfm-recently-played.vercel.app/api?user=The_Berlin&show_user=header&compact_stats_only)
+
+---
