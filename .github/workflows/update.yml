@@ -37,7 +37,7 @@ jobs:
 
             node update.js
 
-            echo "Sleeping for 5 minutes..."
+            echo "Sleeping for 2 minutes..."
             sleep 120
 
             NOW=$(date +%s)
