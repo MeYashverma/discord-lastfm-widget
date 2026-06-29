@@ -1,10 +1,9 @@
 name: Update Discord Widget
 
 on:
-  schedule:
-    - cron: "*/2 * * * *"
-
   workflow_dispatch:
+  schedule:
+    - cron: "*/10 * * * *"
 
 jobs:
   update:
