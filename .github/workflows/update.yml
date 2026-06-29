@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "*/10 * * * *"
-    - cron: "5,15,25,35,45,55 * * * *
+    - cron: "5,15,25,35,45,55 * * * *"
 
 jobs:
   update:
@@ -22,9 +22,6 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Debug Time25
-        run: date
-
       - name: Run Widget Updater
         run: node update.js
         env:
@@ -34,12 +31,13 @@ jobs:
           DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
 
-      - name: Wait before retry
-        run: sleep 300   # 5 minutes
-        
-      - name: Self Trigger Next Run
+      - name: Wait before self-retry
+        run: sleep 300
+
+      - name: Self Trigger
         run: |
           curl -X POST \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/${{ github.repository }}/actions/workflows/update.yml/dispatches \
             -d '{"ref":"main"}'
+``
