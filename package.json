@@ -1,5 +1,5 @@
 {
-  "name": "discord-lastfm-widget",
+  "name": "discord-live-widget",
   "version": "1.0.0",
   "main": "update.js",
   "scripts": {
