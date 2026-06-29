@@ -38,7 +38,7 @@ jobs:
             node update.js
 
             echo "Sleeping for 5 minutes..."
-            sleep 300
+            sleep 120
 
             NOW=$(date +%s)
             ELAPSED=$((NOW - START_TIME))
