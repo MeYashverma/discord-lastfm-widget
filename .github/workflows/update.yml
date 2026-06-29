@@ -3,12 +3,12 @@ name: Update Discord Widget
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/10 * * * *"
-    - cron: "5,15,25,35,45,55 * * * *"
+    - cron: "0 */6 * * *"   # restart every 6 hours (safety restart)
 
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 360   # max GitHub limit (6 hours)
 
     steps:
       - name: Checkout Repository
@@ -22,21 +22,36 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Run Widget Updater
-        run: node update.js
+      - name: Run Continuous Widget Updater
+        run: |
+          echo "Starting continuous updater loop..."
+
+          START_TIME=$(date +%s)
+
+          while true
+          do
+            echo "----------------------------------"
+            echo "Running update at $(date)"
+            echo "----------------------------------"
+
+            node update.js
+
+            echo "Sleeping for 5 minutes..."
+            sleep 300
+
+            # Check elapsed runtime (safe exit before GitHub kills job)
+            NOW=$(date +%s)
+            ELAPSED=$((NOW - START_TIME))
+
+            # Stop ~5 min before 6-hour limit (21000 sec ≈ 5h 50m)
+            if [ $ELAPSED -gt 21000 ]; then
+              echo "Approaching timeout, exiting loop safely..."
+              break
+            fi
+          done
         env:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_USERNAME: ${{ secrets.LASTFM_USERNAME }}
           DISCORD_APP_ID: ${{ secrets.DISCORD_APP_ID }}
           DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-
-      - name: Wait before self-retry
-        run: sleep 300
-
-      - name: Self Trigger
-        run: |
-          curl -X POST \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/update.yml/dispatches \
-            -d '{"ref":"main"}'
