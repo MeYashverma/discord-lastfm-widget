@@ -221,38 +221,6 @@ DISCORD_BOT_TOKEN
 
 ---
 
-## 🚀 Deployment
-
-```mermaid
-flowchart LR
-    A[Clone Repo] --> B[Add Secrets]
-    B --> C[Push Code]
-    C --> D[GitHub Actions]
-    D --> E[Fetch Data]
-    E --> F[Send Payload]
-    F --> G[Widget Updated ✅]
-```
-
----
-
-## 🧠 Development Journey
-
-Tested architectures:
-
-- Single workflow
-- Multi-workflow
-- Cloudflare Workers
-- Railway
-- Render
-
-### Challenges
-
-- Discord API 400 errors
-- Payload overwrite behavior
-- GitHub cron limitations
-
----
-
 ## 📚 References
 
 - https://youtu.be/gYv7D83u7yQ
