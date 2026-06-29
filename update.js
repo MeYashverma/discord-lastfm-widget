@@ -8,14 +8,11 @@ const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 
 let previousTrack = null;
 
-
-// current track only
 async function fetchRecentTrack() {
     const url =
-        `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USERNAME}&api_key=${LASTFM_API_KEY}&format=json&limit=1`;
+      `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USERNAME}&api_key=${LASTFM_API_KEY}&format=json&limit=1`;
 
     const response = await axios.get(url);
-
     const track = response.data.recenttracks.track[0];
 
     return {
@@ -27,8 +24,6 @@ async function fetchRecentTrack() {
     };
 }
 
-
-// push to discord
 async function updateDiscord(track) {
 
     const payload = {
@@ -52,7 +47,7 @@ async function updateDiscord(track) {
     };
 
     const url =
-        `https://discord.com/api/v9/applications/${DISCORD_APP_ID}/users/${DISCORD_USER_ID}/identities/0/profile`;
+      `https://discord.com/api/v9/applications/${DISCORD_APP_ID}/users/${DISCORD_USER_ID}/identities/0/profile`;
 
     await axios.patch(url, payload, {
         headers: {
@@ -62,18 +57,15 @@ async function updateDiscord(track) {
     });
 }
 
-
-// loop
 async function runUpdate() {
     try {
-
         const track = await fetchRecentTrack();
 
         const current =
-            `${track.name}-${track.artist}`;
+          `${track.name}-${track.artist}`;
 
         if (current === previousTrack) {
-            console.log("No song change");
+            console.log("No track change");
             return;
         }
 
@@ -88,8 +80,7 @@ async function runUpdate() {
     }
 }
 
-
-console.log("Railway worker started");
+console.log("Render worker started");
 
 runUpdate();
 
